@@ -11,12 +11,17 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
+    "prisma:generate": "DATABASE_URL=postgresql://Richard@localhost:5432/personal_planning?schema=public prisma generate",
+    "prisma:migrate": "DATABASE_URL=postgresql://Richard@localhost:5432/personal_planning?schema=public prisma migrate dev",
+    "prisma:studio": "DATABASE_URL=postgresql://Richard@localhost:5432/personal_planning?schema=public prisma studio",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["okr", "journal", "planning", "api"],
+  "keywords": [
+    "okr",
+    "journal",
+    "planning",
+    "api"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -38,6 +43,7 @@
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.1",
     "nodemon": "^3.1.11",
     "prettier": "^3.6.2",

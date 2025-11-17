@@ -21,14 +21,14 @@ export class ApiError extends Error {
  */
 export const errorHandler = (
   err: Error,
-  req: Request,
+  _req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
   // Default error values
   let statusCode = 500;
   let message = 'Internal Server Error';
-  let errors: unknown = undefined;
+  let validationErrors: Array<{ field: string; message: string }> | undefined = undefined;
 
   // Handle ApiError
   if (err instanceof ApiError) {
@@ -39,7 +39,7 @@ export const errorHandler = (
   else if (err instanceof ZodError) {
     statusCode = 400;
     message = 'Validation Error';
-    errors = err.errors.map((e) => ({
+    validationErrors = err.issues.map((e) => ({
       field: e.path.join('.'),
       message: e.message,
     }));
@@ -58,12 +58,25 @@ export const errorHandler = (
   }
 
   // Send error response
-  res.status(statusCode).json({
+  const response: {
+    success: boolean;
+    message: string;
+    errors?: Array<{ field: string; message: string }>;
+    stack?: string;
+  } = {
     success: false,
     message,
-    ...(errors && { errors }),
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
+  };
+
+  if (validationErrors) {
+    response.errors = validationErrors;
+  }
+
+  if (process.env.NODE_ENV === 'development' && err.stack) {
+    response.stack = err.stack;
+  }
+
+  res.status(statusCode).json(response);
 };
 
 /**

@@ -1,10 +1,19 @@
+import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+
+// Ensure environment variables are loaded before creating Prisma client
+dotenv.config();
 
 /**
  * Singleton instance of PrismaClient for database operations
  */
 const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL || 'postgresql://Richard@localhost:5432/personal_planning?schema=public',
+    },
+  },
 });
 
 /**

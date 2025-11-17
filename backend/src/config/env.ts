@@ -10,7 +10,7 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('5000'),
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('7d'),
   ANTHROPIC_API_KEY: z.string().min(1),
@@ -26,7 +26,7 @@ const validateEnv = (): z.infer<typeof envSchema> => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Invalid environment variables:');
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         console.error(`  - ${err.path.join('.')}: ${err.message}`);
       });
     }
