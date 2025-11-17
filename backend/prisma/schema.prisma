@@ -1,0 +1,162 @@
+// Personal Planning System - Database Schema
+// OKR tracking and daily journaling platform
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and user management
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  name          String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  objectives       Objective[]
+  journalTemplates JournalTemplate[]
+  journalEntries   JournalEntry[]
+
+  @@map("users")
+}
+
+// Objective model for OKR tracking
+model Objective {
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  title       String
+  description String?        @db.Text
+  periodType  PeriodType     @map("period_type")
+  startDate   DateTime       @map("start_date") @db.Date
+  endDate     DateTime       @map("end_date") @db.Date
+  status      ObjectiveStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyResults  KeyResult[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("objectives")
+}
+
+// Key Result model for measurable outcomes
+model KeyResult {
+  id           String          @id @default(uuid())
+  objectiveId  String          @map("objective_id")
+  title        String
+  description  String?         @db.Text
+  targetValue  Decimal         @map("target_value") @db.Decimal(10, 2)
+  currentValue Decimal         @default(0) @map("current_value") @db.Decimal(10, 2)
+  unit         String
+  status       KeyResultStatus @default(ON_TRACK) @map("status")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  objective   Objective    @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  okrUpdates  OkrUpdate[]
+
+  @@index([objectiveId])
+  @@index([status])
+  @@map("key_results")
+}
+
+// Journal Template model for custom daily journal questions
+model JournalTemplate {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  questions Json     // Array of question objects: [{id, question, type}]
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntries JournalEntry[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("journal_templates")
+}
+
+// Journal Entry model for daily reflections
+model JournalEntry {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  templateId  String   @map("template_id")
+  entryDate   DateTime @map("entry_date") @db.Date
+  responses   Json     // Question-answer pairs
+  moodScore   Int?     @map("mood_score") @db.SmallInt // 1-10
+  energyScore Int?     @map("energy_score") @db.SmallInt // 1-10
+  aiFeedback  String?  @map("ai_feedback") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template   JournalTemplate @relation(fields: [templateId], references: [id])
+  okrUpdates OkrUpdate[]
+
+  @@unique([userId, entryDate])
+  @@index([userId])
+  @@index([entryDate])
+  @@map("journal_entries")
+}
+
+// OKR Update model for tracking changes and audit trail
+model OkrUpdate {
+  id             String         @id @default(uuid())
+  keyResultId    String         @map("key_result_id")
+  journalEntryId String?        @map("journal_entry_id")
+  previousValue  Decimal        @map("previous_value") @db.Decimal(10, 2)
+  newValue       Decimal        @map("new_value") @db.Decimal(10, 2)
+  updateType     UpdateType     @map("update_type")
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  keyResult    KeyResult     @relation(fields: [keyResultId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  @@index([keyResultId])
+  @@index([journalEntryId])
+  @@map("okr_updates")
+}
+
+// Enums
+enum PeriodType {
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+}
+
+enum ObjectiveStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum KeyResultStatus {
+  ON_TRACK
+  AT_RISK
+  BEHIND
+  COMPLETED
+}
+
+enum UpdateType {
+  MANUAL
+  JOURNAL_SUGGESTED
+  JOURNAL_AUTO
+}
