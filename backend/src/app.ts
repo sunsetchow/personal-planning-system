@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { rateLimitMiddleware } from './middleware/rateLimiter';
+import authRoutes from './routes/authRoutes';
 
 /**
  * Creates and configures the Express application
@@ -36,8 +37,8 @@ export const createApp = (): Application => {
     });
   });
 
-  // API routes will be added here
-  // app.use('/api/auth', authRoutes);
+  // API routes
+  app.use('/api/auth', authRoutes);
   // app.use('/api/objectives', objectiveRoutes);
   // app.use('/api/journal-templates', journalTemplateRoutes);
   // app.use('/api/journal-entries', journalEntryRoutes);
