@@ -53,6 +53,8 @@ An AI-native web service for personal planning that combines OKR (Objectives and
 
 ## Getting Started
 
+> **📱 Mac Users:** For a detailed step-by-step guide specifically for macOS, see [MAC_SETUP_GUIDE.md](./MAC_SETUP_GUIDE.md)
+
 ### Prerequisites
 
 - Node.js 18+ and npm
