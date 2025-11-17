@@ -13,7 +13,8 @@ An AI-native web service for personal planning combining OKR (Objectives and Key
 - **ORM**: Prisma
   - Reasons: Type-safe, excellent TypeScript integration, easy migrations
 - **Authentication**: JWT with bcrypt
-- **AI Integration**: OpenAI API (for suggestions and feedback)
+- **AI Integration**: Claude API (Anthropic) (for suggestions and feedback)
+  - Reasons: Superior reasoning capabilities, better context understanding, safer outputs
 
 ### Frontend
 - **Framework**: Next.js 14+ (React with TypeScript)
@@ -59,10 +60,10 @@ An AI-native web service for personal planning combining OKR (Objectives and Key
        │            │
        │            │
        ▼            ▼
-┌──────────┐  ┌─────────────┐
-│PostgreSQL│  │  OpenAI API │
-│ Database │  │             │
-└──────────┘  └─────────────┘
+┌──────────┐  ┌──────────────┐
+│PostgreSQL│  │  Claude API  │
+│ Database │  │  (Anthropic) │
+└──────────┘  └──────────────┘
 ```
 
 ### Database Schema
@@ -291,7 +292,7 @@ src/
 - [ ] AI-powered entry analysis/feedback
 
 ### Phase 5: AI Integration & Automation
-- [ ] Set up OpenAI API integration
+- [ ] Set up Claude API (Anthropic) integration
 - [ ] Implement AI feedback on journal entries
 - [ ] Implement AI-powered OKR suggestions from journal entries
 - [ ] Build confirmation UI for AI-suggested updates
@@ -336,7 +337,7 @@ src/
    - prisma, @prisma/client
    - bcrypt, jsonwebtoken
    - zod (validation)
-   - openai
+   - @anthropic-ai/sdk
 3. Set up folder structure
 4. Configure Prisma schema
 5. Create initial migration
@@ -382,10 +383,10 @@ src/
 6. Add search and filtering
 
 ### Step 6: AI Features
-1. Set up OpenAI service
-2. Implement key result suggestions
-3. Implement journal entry analysis
-4. Implement OKR update suggestions
+1. Set up Claude API service with Anthropic SDK
+2. Implement key result suggestions using Claude
+3. Implement journal entry analysis with Claude
+4. Implement OKR update suggestions powered by Claude
 5. Build UI for AI interactions
 6. Add confirmation flows
 
