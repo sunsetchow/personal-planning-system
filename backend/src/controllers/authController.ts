@@ -18,11 +18,19 @@ export const register = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log('📝 Registration request received:', {
+      email: req.body.email,
+      name: req.body.name,
+      hasPassword: !!req.body.password,
+    });
+
     // Validate request body
     const validatedData = registerSchema.parse(req.body);
+    console.log('✅ Validation passed');
 
     // Register user
     const result = await registerUser(validatedData);
+    console.log('✅ User registered successfully:', { email: result.user.email });
 
     res.status(201).json({
       success: true,
@@ -30,6 +38,7 @@ export const register = async (
       data: result,
     });
   } catch (error) {
+    console.error('❌ Registration error:', error);
     next(error);
   }
 };
@@ -95,7 +104,7 @@ export const getCurrentUser = async (
  * POST /api/auth/logout
  */
 export const logout = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

@@ -22,18 +22,23 @@ export interface AuthResponse {
  * Register a new user
  */
 export const registerUser = async (input: RegisterInput): Promise<AuthResponse> => {
+  console.log('🔍 Checking if user exists:', { email: input.email });
+
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
     where: { email: input.email },
   });
 
   if (existingUser) {
+    console.log('⚠️ User already exists:', { email: input.email });
     throw new ApiError(400, 'User with this email already exists');
   }
 
+  console.log('🔒 Hashing password');
   // Hash password
   const passwordHash = await hashPassword(input.password);
 
+  console.log('💾 Creating user in database');
   // Create user
   const user = await prisma.user.create({
     data: {
@@ -43,6 +48,7 @@ export const registerUser = async (input: RegisterInput): Promise<AuthResponse> 
     },
   });
 
+  console.log('🔑 Generating JWT token');
   // Generate JWT token
   const token = generateToken({
     userId: user.id,

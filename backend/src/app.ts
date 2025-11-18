@@ -25,6 +25,12 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+  // Request logging middleware (for debugging)
+  app.use((req, _res, next) => {
+    console.log(`📨 ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'}`);
+    next();
+  });
+
   // Rate limiting
   app.use(rateLimitMiddleware);
 
