@@ -5,6 +5,8 @@ import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { rateLimitMiddleware } from './middleware/rateLimiter';
 import authRoutes from './routes/authRoutes';
+import objectiveRoutes from './routes/objectiveRoutes';
+import keyResultRoutes from './routes/keyResultRoutes';
 
 /**
  * Creates and configures the Express application
@@ -45,7 +47,8 @@ export const createApp = (): Application => {
 
   // API routes
   app.use('/api/auth', authRoutes);
-  // app.use('/api/objectives', objectiveRoutes);
+  app.use('/api/objectives', objectiveRoutes);
+  app.use('/api/key-results', keyResultRoutes);
   // app.use('/api/journal-templates', journalTemplateRoutes);
   // app.use('/api/journal-entries', journalEntryRoutes);
   // app.use('/api/dashboard', dashboardRoutes);

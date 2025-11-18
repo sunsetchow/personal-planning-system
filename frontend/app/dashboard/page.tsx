@@ -32,9 +32,12 @@ function DashboardContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
-                Coming in Phase 3: Create and manage your OKRs with AI-powered suggestions.
+              <p className="text-gray-600 mb-4">
+                Create and manage your OKRs with progress tracking and visualization.
               </p>
+              <Button onClick={() => window.location.href = '/dashboard/okrs'}>
+                Manage OKRs →
+              </Button>
             </CardContent>
           </Card>
 
@@ -84,17 +87,17 @@ function DashboardContent() {
         <div className="mt-8">
           <Card>
             <CardHeader>
-              <CardTitle>Phase 2 Complete! 🎉</CardTitle>
+              <CardTitle>Phase 3 Complete! 🎉</CardTitle>
               <CardDescription>
-                Authentication system is now working
+                OKR tracking system is now working
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <p className="text-gray-700">You&apos;re logged in as: <strong>{user?.email}</strong></p>
                 <p className="text-gray-600">
-                  The authentication system is fully functional. You can now log out and log back in,
-                  or create new accounts. Next, we&apos;ll build the OKR tracking features!
+                  You can now create objectives, add key results, and track your progress with visual indicators.
+                  Next up: Daily journal features!
                 </p>
               </div>
             </CardContent>
