@@ -49,9 +49,12 @@ function DashboardContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
-                Coming in Phase 4: Create daily journal entries with customizable templates.
+              <p className="text-gray-600 mb-4">
+                Create daily journal entries with customizable templates and track your mood and energy levels.
               </p>
+              <Button onClick={() => window.location.href = '/dashboard/journal'}>
+                Manage Journal →
+              </Button>
             </CardContent>
           </Card>
 
@@ -87,17 +90,17 @@ function DashboardContent() {
         <div className="mt-8">
           <Card>
             <CardHeader>
-              <CardTitle>Phase 3 Complete! 🎉</CardTitle>
+              <CardTitle>Phase 4 Complete! 🎉</CardTitle>
               <CardDescription>
-                OKR tracking system is now working
+                Daily journal system is now working
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <p className="text-gray-700">You&apos;re logged in as: <strong>{user?.email}</strong></p>
                 <p className="text-gray-600">
-                  You can now create objectives, add key results, and track your progress with visual indicators.
-                  Next up: Daily journal features!
+                  You can now create journal templates, write daily entries, and track mood and energy levels.
+                  Next up: AI integration with Claude for personalized insights and recommendations!
                 </p>
               </div>
             </CardContent>
