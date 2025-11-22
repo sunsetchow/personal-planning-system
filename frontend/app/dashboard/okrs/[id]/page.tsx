@@ -122,21 +122,33 @@ function ObjectiveDetailContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+              <p className="mt-4 text-gray-600">Loading...</p>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
 
   if (!objective) {
-    return <div>Objective not found</div>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div>Objective not found</div>
+        </main>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
       {/* Objective Header */}
       <div>
         <div className="flex justify-between items-start mb-4">
@@ -336,6 +348,8 @@ function ObjectiveDetailContent() {
           </Card>
         )}
       </div>
+        </div>
+      </main>
     </div>
   );
 }
