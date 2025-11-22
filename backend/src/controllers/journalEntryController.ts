@@ -9,7 +9,6 @@ import {
   createEntry,
   updateEntry,
   deleteEntry,
-  getEntryStats,
 } from '../services/journalEntryService';
 
 /**
@@ -102,32 +101,6 @@ export const getEntry = async (
     res.status(200).json({
       success: true,
       data: { entry },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Get entry statistics
- * GET /api/journal-entries/stats
- */
-export const getStats = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ success: false, message: 'Not authenticated' });
-      return;
-    }
-
-    const stats = await getEntryStats(req.user.userId);
-
-    res.status(200).json({
-      success: true,
-      data: { stats },
     });
   } catch (error) {
     next(error);

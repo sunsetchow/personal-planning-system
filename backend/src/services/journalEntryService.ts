@@ -209,31 +209,3 @@ export const deleteEntry = async (entryId: string, userId: string) => {
 
   console.log('✅ Entry deleted:', entryId);
 };
-
-/**
- * Get statistics for user's journal entries
- */
-export const getEntryStats = async (userId: string) => {
-  const entries = await prisma.journalEntry.findMany({
-    where: { userId },
-    select: {
-      moodScore: true,
-      energyScore: true,
-      entryDate: true,
-    },
-  });
-
-  const totalEntries = entries.length;
-  const avgMood =
-    entries.filter((e) => e.moodScore).reduce((sum, e) => sum + (e.moodScore || 0), 0) /
-      entries.filter((e) => e.moodScore).length || 0;
-  const avgEnergy =
-    entries.filter((e) => e.energyScore).reduce((sum, e) => sum + (e.energyScore || 0), 0) /
-      entries.filter((e) => e.energyScore).length || 0;
-
-  return {
-    totalEntries,
-    averageMoodScore: Math.round(avgMood * 10) / 10,
-    averageEnergyScore: Math.round(avgEnergy * 10) / 10,
-  };
-};

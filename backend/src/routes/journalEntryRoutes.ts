@@ -3,7 +3,6 @@ import {
   listEntries,
   getByDate,
   getEntry,
-  getStats,
   create,
   update,
   remove,
@@ -25,13 +24,6 @@ router.use(authenticate);
  * @access  Private
  */
 router.get('/', listEntries);
-
-/**
- * @route   GET /api/journal-entries/stats
- * @desc    Get entry statistics
- * @access  Private
- */
-router.get('/stats', getStats);
 
 /**
  * @route   GET /api/journal-entries/date/:date
