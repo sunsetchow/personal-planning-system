@@ -97,8 +97,6 @@ model JournalEntry {
   templateId  String   @map("template_id")
   entryDate   DateTime @map("entry_date") @db.Date
   responses   Json     // Question-answer pairs
-  moodScore   Int?     @map("mood_score") @db.SmallInt // 1-10
-  energyScore Int?     @map("energy_score") @db.SmallInt // 1-10
   aiFeedback  String?  @map("ai_feedback") @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

@@ -31,15 +31,11 @@ export const updateTemplateSchema = z.object({
 export const createEntrySchema = z.object({
   templateId: z.string().uuid('Invalid template ID'),
   entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
-  responses: z.record(z.unknown()), // Question ID -> answer mapping
-  moodScore: z.number().int().min(1).max(10).optional(),
-  energyScore: z.number().int().min(1).max(10).optional(),
+  responses: z.record(z.string(), z.unknown()), // Question ID -> answer mapping
 });
 
 export const updateEntrySchema = z.object({
-  responses: z.record(z.unknown()).optional(),
-  moodScore: z.number().int().min(1).max(10).optional(),
-  energyScore: z.number().int().min(1).max(10).optional(),
+  responses: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Type exports

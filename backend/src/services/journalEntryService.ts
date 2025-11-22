@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { Prisma } from '@prisma/client';
 import { ApiError } from '../middleware/errorHandler';
 import { CreateEntryInput, UpdateEntryInput } from '../utils/journalValidation';
 
@@ -143,9 +144,7 @@ export const createEntry = async (userId: string, input: CreateEntryInput) => {
       userId,
       templateId: input.templateId,
       entryDate: new Date(input.entryDate),
-      responses: input.responses,
-      moodScore: input.moodScore,
-      energyScore: input.energyScore,
+      responses: input.responses as Prisma.InputJsonValue,
     },
     include: {
       template: true,
@@ -178,9 +177,7 @@ export const updateEntry = async (
   const entry = await prisma.journalEntry.update({
     where: { id: entryId },
     data: {
-      ...(input.responses && { responses: input.responses }),
-      ...(input.moodScore !== undefined && { moodScore: input.moodScore }),
-      ...(input.energyScore !== undefined && { energyScore: input.energyScore }),
+      ...(input.responses && { responses: input.responses as Prisma.InputJsonValue }),
     },
     include: {
       template: true,
