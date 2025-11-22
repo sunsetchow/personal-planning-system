@@ -1,20 +1,77 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { Target, TrendingUp, Zap, Sparkles } from 'lucide-react';
+import { Target, TrendingUp, Zap, Sparkles, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getAIInsights } from '@/lib/ai';
+import { getObjectives } from '@/lib/okr';
+import { getEntries } from '@/lib/journal';
 
 function DashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Mock stats - these will be replaced with real API calls
-  const avgProgress = 0;
-  const totalObjectives = 0;
-  const completedObjectives = 0;
-  const recentEnergy = '-';
+  // State
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+  const [avgProgress, setAvgProgress] = useState(0);
+  const [totalObjectives, setTotalObjectives] = useState(0);
+  const [completedObjectives, setCompletedObjectives] = useState(0);
+  const [recentEnergy, setRecentEnergy] = useState<string | number>('-');
+
+  // Load dashboard data
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        const [objectives, entries] = await Promise.all([
+          getObjectives(),
+          getEntries({ limit: 1 }),
+        ]);
+
+        // Calculate stats
+        const total = objectives.length;
+        const completed = objectives.filter((o: any) => o.progress >= 100).length;
+        const avg = total > 0
+          ? Math.round(objectives.reduce((acc: number, curr: any) => acc + (curr.progress || 0), 0) / total)
+          : 0;
+
+        setTotalObjectives(total);
+        setCompletedObjectives(completed);
+        setAvgProgress(avg);
+
+        if (entries.length > 0 && entries[0].energyScore) {
+          setRecentEnergy(entries[0].energyScore);
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  // Load AI insights
+  useEffect(() => {
+    const loadInsights = async () => {
+      if (totalObjectives === 0) return;
+
+      setIsLoadingInsights(true);
+      try {
+        const insights = await getAIInsights();
+        setAiInsights(insights);
+      } catch (error) {
+        console.error('Failed to load AI insights:', error);
+        setAiInsights('Unable to generate insights at this time.');
+      } finally {
+        setIsLoadingInsights(false);
+      }
+    };
+
+    loadInsights();
+  }, [totalObjectives]);
 
   return (
     <DashboardLayout>
@@ -136,16 +193,28 @@ function DashboardContent() {
               <h3 className="text-lg font-semibold text-indigo-900">Orbit AI Insights</h3>
             </div>
 
-            <div className="prose prose-indigo text-sm text-indigo-800">
-              <p>
-                Start creating OKRs and journal entries to unlock personalized AI insights
-                about your performance patterns and progress trends.
-              </p>
-              <p className="mt-3">
-                The AI will help you identify connections between your daily reflections and
-                goal progress, suggesting updates and improvements along the way.
-              </p>
-            </div>
+            {isLoadingInsights ? (
+              <div className="animate-pulse space-y-3">
+                <div className="h-4 bg-indigo-200 rounded w-3/4"></div>
+                <div className="h-4 bg-indigo-200 rounded w-full"></div>
+                <div className="h-4 bg-indigo-200 rounded w-5/6"></div>
+              </div>
+            ) : aiInsights ? (
+              <div className="prose prose-indigo text-sm text-indigo-800">
+                <p>{aiInsights}</p>
+              </div>
+            ) : (
+              <div className="prose prose-indigo text-sm text-indigo-800">
+                <p>
+                  Start creating OKRs and journal entries to unlock personalized AI insights
+                  about your performance patterns and progress trends.
+                </p>
+                <p className="mt-3">
+                  The AI will help you identify connections between your daily reflections and
+                  goal progress, suggesting updates and improvements along the way.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -186,14 +255,14 @@ function DashboardContent() {
 
             <div className="flex gap-3">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span className="text-yellow-600 font-bold">→</span>
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 font-bold">✓</span>
                 </div>
               </div>
               <div>
                 <div className="font-medium text-gray-900">AI Integration</div>
                 <div className="text-sm text-gray-500">
-                  Coming in Phase 5: Claude-powered insights and suggestions
+                  Claude-powered insights, suggestions, and analysis
                 </div>
               </div>
             </div>
