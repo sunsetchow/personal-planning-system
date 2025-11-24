@@ -12,7 +12,8 @@ const anthropic = new Anthropic({
   apiKey: env.ANTHROPIC_API_KEY || '',
 });
 
-const MODEL = 'claude-sonnet-4-5-20250929';
+// Use a current, supported Claude model
+const MODEL = 'claude-3-5-sonnet-20240620';
 
 interface KeyResultWithObjective {
   id: string;
@@ -174,20 +175,8 @@ export const generateInsights = async (
   }
 
   try {
-    // Get recent entries (last 7)
-    const recentEntries = journalEntries.slice(-7);
-
-    // Calculate average mood and energy
-    const avgMood =
-      recentEntries
-        .filter((e) => e.moodScore)
-        .reduce((sum, e) => sum + (e.moodScore || 0), 0) / recentEntries.filter((e) => e.moodScore).length || 0;
-
-    const avgEnergy =
-      recentEntries
-        .filter((e) => e.energyScore)
-        .reduce((sum, e) => sum + (e.energyScore || 0), 0) /
-        recentEntries.filter((e) => e.energyScore).length || 0;
+    // Get recent entries (last 7) - entries come in most-recent-first order
+    const recentEntries = journalEntries.slice(0, 7);
 
     // Calculate OKR progress
     const avgProgress =
@@ -203,8 +192,7 @@ export const generateInsights = async (
     const prompt = `You are an insightful AI coach analyzing someone's personal development journey.
 
 Recent Data:
-- Average Mood: ${avgMood.toFixed(1)}/10 (last ${recentEntries.length} entries)
-- Average Energy: ${avgEnergy.toFixed(1)}/10
+- Journal Entries: ${recentEntries.length} entries in the last week
 - Overall OKR Progress: ${avgProgress.toFixed(0)}%
 - Active Goals: ${objectives.length}
 

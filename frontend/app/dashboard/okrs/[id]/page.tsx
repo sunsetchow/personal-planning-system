@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { getObjective, createKeyResult, updateKeyResultProgress, deleteKeyResult } from '@/lib/okr';
 import { Objective, KeyResult } from '@/lib/types';
+import { ArrowLeft, Target, Plus, Trash2 } from 'lucide-react';
 
 function ObjectiveDetailContent() {
   const params = useParams();
@@ -122,80 +124,89 @@ function ObjectiveDetailContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-              <p className="mt-4 text-gray-600">Loading...</p>
-            </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent" />
+            <p className="mt-4 text-gray-600">Loading objective...</p>
           </div>
-        </main>
-      </div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (!objective) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div>Objective not found</div>
-        </main>
-      </div>
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto">
+          <Card className="rounded-xl shadow-sm border border-gray-100">
+            <CardContent className="pt-6">
+              <div className="text-center py-12">
+                <Target className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600 mb-4">Objective not found</p>
+                <Button onClick={() => router.push('/dashboard/okrs')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to OKRs
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-      {/* Objective Header */}
-      <div>
-        <div className="flex justify-between items-start mb-4">
+    <DashboardLayout>
+      <div className="space-y-6 max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">{objective.title}</h2>
-            <p className="text-gray-600 mt-2">{objective.description}</p>
+            <h2 className="text-2xl font-bold text-gray-900">{objective.title}</h2>
+            <p className="text-gray-500 mt-1">{objective.description}</p>
           </div>
           <Button variant="outline" onClick={() => router.push('/dashboard/okrs')}>
-            ← Back
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to OKRs
           </Button>
         </div>
 
+        {/* Progress Card */}
         {typeof objective.progress === 'number' && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Overall Progress</span>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Overall Progress</h3>
+              <Target className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Completion</span>
                 <span className="font-semibold text-gray-900">{objective.progress}%</span>
               </div>
               <Progress value={objective.progress} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
-      </div>
 
-      {error && (
-        <div className="p-4 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
+            {error}
+          </div>
+        )}
 
-      {/* Key Results Section */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-2xl font-bold text-gray-900">Key Results</h3>
-          <Button onClick={() => setShowAddKR(!showAddKR)}>
-            {showAddKR ? 'Cancel' : '+ Add Key Result'}
-          </Button>
-        </div>
+        {/* Key Results Section */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Key Results</h3>
+            <Button onClick={() => setShowAddKR(!showAddKR)}>
+              {showAddKR ? 'Cancel' : <><Plus className="h-4 w-4 mr-2" />Add Key Result</>}
+            </Button>
+          </div>
 
-        {/* Add Key Result Form */}
-        {showAddKR && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>New Key Result</CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* Add Key Result Form */}
+          {showAddKR && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h4 className="font-semibold text-gray-900 mb-4">New Key Result</h4>
               <form onSubmit={handleAddKeyResult} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="krTitle">Title *</Label>
@@ -249,18 +260,16 @@ function ObjectiveDetailContent() {
                   {submitting ? 'Creating...' : 'Create Key Result'}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* Key Results List */}
-        {objective.keyResults && objective.keyResults.length > 0 ? (
-          <div className="space-y-4">
-            {objective.keyResults.map((kr) => {
-              const progress = calculateProgress(kr);
-              return (
-                <Card key={kr.id}>
-                  <CardContent className="pt-6">
+          {/* Key Results List */}
+          {objective.keyResults && objective.keyResults.length > 0 ? (
+            <div className="space-y-3">
+              {objective.keyResults.map((kr) => {
+                const progress = calculateProgress(kr);
+                return (
+                  <div key={kr.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -330,28 +339,26 @@ function ObjectiveDetailContent() {
                         >
                           Update Progress
                         </Button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <p className="text-gray-600 mb-4">No key results yet</p>
-                <Button onClick={() => setShowAddKR(true)}>Add First Key Result</Button>
+                  );
+                })}
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            ) : (
+              <div className="text-center py-8">
+                <Target className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                <p className="text-gray-600 mb-4">No key results yet</p>
+                <Button onClick={() => setShowAddKR(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Key Result
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </main>
-    </div>
-  );
+      </DashboardLayout>
+    );
 }
 
 export default function ObjectiveDetailPage() {

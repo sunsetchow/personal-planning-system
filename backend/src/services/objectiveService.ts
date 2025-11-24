@@ -106,6 +106,14 @@ export const updateObjective = async (
     throw new ApiError(404, 'Objective not found');
   }
 
+  // Validate that end date stays after start date when updating
+  const nextStartDate = input.startDate ? new Date(input.startDate) : existing.startDate;
+  const nextEndDate = input.endDate ? new Date(input.endDate) : existing.endDate;
+
+  if (nextEndDate <= nextStartDate) {
+    throw new ApiError(400, 'End date must be after start date');
+  }
+
   const objective = await prisma.objective.update({
     where: { id: objectiveId },
     data: {

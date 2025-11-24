@@ -44,16 +44,28 @@ function OKRsContent() {
     }
   };
 
-  const getPeriodLabel = (periodType: string) => {
-    switch (periodType) {
-      case 'QUARTERLY':
-        return 'Q1 2025';
-      case 'SEMI_ANNUAL':
-        return 'H1 2025';
+  const getPeriodLabel = (objective: Objective) => {
+    const start = new Date(objective.startDate);
+    if (Number.isNaN(start.getTime())) {
+      return objective.periodType;
+    }
+
+    const year = start.getFullYear();
+    const month = start.getMonth(); // 0-indexed
+
+    switch (objective.periodType) {
+      case 'QUARTERLY': {
+        const quarter = Math.floor(month / 3) + 1;
+        return `Q${quarter} ${year}`;
+      }
+      case 'SEMI_ANNUAL': {
+        const half = month < 6 ? 'H1' : 'H2';
+        return `${half} ${year}`;
+      }
       case 'ANNUAL':
-        return '2025';
+        return `${year}`;
       default:
-        return periodType;
+        return objective.periodType;
     }
   };
 
@@ -124,7 +136,7 @@ interface ObjectiveCardProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onDelete: (id: string) => void;
-  getPeriodLabel: (periodType: string) => string;
+  getPeriodLabel: (objective: Objective) => string;
   router: any;
 }
 
@@ -147,7 +159,7 @@ const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded">
-              {getPeriodLabel(objective.periodType)}
+              {getPeriodLabel(objective)}
             </span>
             <h3 className="text-lg font-semibold text-gray-900">{objective.title}</h3>
           </div>

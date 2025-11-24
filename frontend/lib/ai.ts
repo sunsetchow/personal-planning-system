@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 // Create axios instance with auth token
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -18,15 +18,11 @@ export interface OKRUpdateSuggestion {
 /**
  * Analyze a journal entry and get AI feedback
  */
-export const analyzeJournalEntry = async (
-  content: string,
-  moodScore?: number,
-  energyScore?: number
-): Promise<string> => {
+export const analyzeJournalEntry = async (content: string): Promise<string> => {
   try {
     const response = await axios.post(
-      `${API_URL}/api/ai/analyze-entry`,
-      { content, moodScore, energyScore },
+      `${API_URL}/ai/analyze-entry`,
+      { content },
       { headers: getAuthHeaders() }
     );
     return response.data.feedback;
@@ -44,7 +40,7 @@ export const suggestOKRUpdates = async (
 ): Promise<OKRUpdateSuggestion[]> => {
   try {
     const response = await axios.post(
-      `${API_URL}/api/ai/suggest-okr-updates`,
+      `${API_URL}/ai/suggest-okr-updates`,
       { journalContent },
       { headers: getAuthHeaders() }
     );
@@ -60,7 +56,7 @@ export const suggestOKRUpdates = async (
  */
 export const getAIInsights = async (): Promise<string> => {
   try {
-    const response = await axios.get(`${API_URL}/api/ai/insights`, {
+    const response = await axios.get(`${API_URL}/ai/insights`, {
       headers: getAuthHeaders(),
     });
     return response.data.insights;
@@ -76,7 +72,7 @@ export const getAIInsights = async (): Promise<string> => {
 export const suggestKeyResults = async (objectiveTitle: string): Promise<string[]> => {
   try {
     const response = await axios.post(
-      `${API_URL}/api/ai/suggest-key-results`,
+      `${API_URL}/ai/suggest-key-results`,
       { objectiveTitle },
       { headers: getAuthHeaders() }
     );

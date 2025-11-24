@@ -20,8 +20,6 @@ interface DashboardStats {
     totalEntries: number;
     currentStreak: number;
     longestStreak: number;
-    averageMood: number;
-    averageEnergy: number;
     entriesThisWeek: number;
     entriesThisMonth: number;
   };
@@ -68,25 +66,6 @@ export const getDashboardStats = async (userId: string): Promise<DashboardStats>
 
   // Calculate journal stats
   const totalEntries = journalEntries.length;
-
-  // Calculate mood and energy averages
-  const entriesWithMood = journalEntries.filter((e) => e.moodScore);
-  const entriesWithEnergy = journalEntries.filter((e) => e.energyScore);
-
-  const averageMood =
-    entriesWithMood.length > 0
-      ? Math.round(
-          (entriesWithMood.reduce((sum, e) => sum + Number(e.moodScore || 0), 0) / entriesWithMood.length) * 10
-        ) / 10
-      : 0;
-
-  const averageEnergy =
-    entriesWithEnergy.length > 0
-      ? Math.round(
-          (entriesWithEnergy.reduce((sum, e) => sum + Number(e.energyScore || 0), 0) / entriesWithEnergy.length) *
-            10
-        ) / 10
-      : 0;
 
   // Calculate streaks
   const { currentStreak, longestStreak } = calculateJournalStreaks(journalEntries);
@@ -162,8 +141,6 @@ export const getDashboardStats = async (userId: string): Promise<DashboardStats>
       totalEntries,
       currentStreak,
       longestStreak,
-      averageMood,
-      averageEnergy,
       entriesThisWeek,
       entriesThisMonth,
     },
@@ -176,7 +153,8 @@ export const getDashboardStats = async (userId: string): Promise<DashboardStats>
 };
 
 /**
- * Get mood and energy trends over time
+ * Get journal entry activity over time
+ * (Previously tracked mood and energy, now tracks entry presence)
  */
 export const getMoodEnergyTrends = async (userId: string, days: number = 30) => {
   const startDate = new Date();
@@ -190,15 +168,12 @@ export const getMoodEnergyTrends = async (userId: string, days: number = 30) => 
     orderBy: { entryDate: 'asc' },
     select: {
       entryDate: true,
-      moodScore: true,
-      energyScore: true,
     },
   });
 
   return entries.map((entry) => ({
     date: entry.entryDate.toISOString().split('T')[0],
-    mood: entry.moodScore,
-    energy: entry.energyScore,
+    hasEntry: true,
   }));
 };
 

@@ -12,16 +12,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          "inline-flex items-center justify-center rounded-md font-medium transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2",
+          "inline-flex items-center justify-center rounded-lg font-medium transition-colors shadow-sm",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
           "disabled:pointer-events-none disabled:opacity-50",
           {
-            "bg-gray-900 text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200": variant === "default",
-            "border border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700": variant === "outline",
-            "hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100": variant === "ghost",
-            "h-10 px-4 py-2": size === "default",
-            "h-9 rounded-md px-3": size === "sm",
-            "h-11 rounded-md px-8": size === "lg",
+            "bg-indigo-600 text-white hover:bg-indigo-700": variant === "default",
+            "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50": variant === "outline",
+            "hover:bg-gray-100 text-gray-600": variant === "ghost",
+            "h-10 px-4 py-2 text-sm": size === "default",
+            "h-9 px-3 text-xs": size === "sm",
+            "h-11 px-8 text-base": size === "lg",
           },
           className
         )}

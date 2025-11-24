@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -20,8 +20,6 @@ export interface DashboardStats {
     totalEntries: number;
     currentStreak: number;
     longestStreak: number;
-    averageMood: number;
-    averageEnergy: number;
     entriesThisWeek: number;
     entriesThisMonth: number;
   };
@@ -54,7 +52,7 @@ export interface OKRProgressTrend {
  */
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
-    const response = await axios.get(`${API_URL}/api/dashboard/stats`, {
+    const response = await axios.get(`${API_URL}/dashboard/stats`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -69,7 +67,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
  */
 export const getMoodEnergyTrends = async (days: number = 30): Promise<MoodEnergyTrend[]> => {
   try {
-    const response = await axios.get(`${API_URL}/api/dashboard/trends/mood-energy?days=${days}`, {
+    const response = await axios.get(`${API_URL}/dashboard/trends/mood-energy?days=${days}`, {
       headers: getAuthHeaders(),
     });
     return response.data.trends;
@@ -84,7 +82,7 @@ export const getMoodEnergyTrends = async (days: number = 30): Promise<MoodEnergy
  */
 export const getOKRProgressTrends = async (): Promise<OKRProgressTrend[]> => {
   try {
-    const response = await axios.get(`${API_URL}/api/dashboard/trends/okr-progress`, {
+    const response = await axios.get(`${API_URL}/dashboard/trends/okr-progress`, {
       headers: getAuthHeaders(),
     });
     return response.data.trends;

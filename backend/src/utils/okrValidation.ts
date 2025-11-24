@@ -28,7 +28,15 @@ export const updateObjectiveSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   status: ObjectiveStatusSchema.optional(),
-});
+}).refine(
+  (data) => {
+    if (data.startDate && data.endDate) {
+      return new Date(data.endDate) > new Date(data.startDate);
+    }
+    return true;
+  },
+  { message: 'End date must be after start date', path: ['endDate'] }
+);
 
 // Key Result schemas
 export const createKeyResultSchema = z.object({
