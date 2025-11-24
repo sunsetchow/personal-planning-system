@@ -97,6 +97,8 @@ model JournalEntry {
   templateId  String   @map("template_id")
   entryDate   DateTime @map("entry_date") @db.Date
   responses   Json     // Question-answer pairs
+  moodScore   Decimal? @map("mood_score") @db.Decimal(3, 1)
+  energyScore Decimal? @map("energy_score") @db.Decimal(3, 1)
   aiFeedback  String?  @map("ai_feedback") @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

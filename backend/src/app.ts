@@ -11,6 +11,7 @@ import journalTemplateRoutes from './routes/journalTemplateRoutes';
 import journalEntryRoutes from './routes/journalEntryRoutes';
 import aiRoutes from './routes/aiRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
+import weeklyReportRoutes from './routes/weeklyReportRoutes';
 
 /**
  * Creates and configures the Express application
@@ -57,6 +58,7 @@ export const createApp = (): Application => {
   app.use('/api/journal-entries', journalEntryRoutes);
   app.use('/api/ai', aiRoutes);
   app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/reports', weeklyReportRoutes);
 
   // 404 handler
   app.use(notFoundHandler);
