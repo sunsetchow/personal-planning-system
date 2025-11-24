@@ -23,6 +23,8 @@ model User {
   objectives       Objective[]
   journalTemplates JournalTemplate[]
   journalEntries   JournalEntry[]
+  timeSessions     TimeSession[]
+  categoryMappings CategoryMapping[]
 
   @@map("users")
 }
@@ -43,6 +45,7 @@ model Objective {
   // Relations
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   keyResults  KeyResult[]
+  timeSessions TimeSession[]
 
   @@index([userId])
   @@index([status])
@@ -134,6 +137,54 @@ model OkrUpdate {
   @@map("okr_updates")
 }
 
+// Time Session model for Pomodoro tracking
+model TimeSession {
+  id              String       @id @default(uuid())
+  userId          String       @map("user_id")
+  title           String
+  category        String?
+  okrCategory     String?      @map("okr_category")
+  objectiveId     String?      @map("objective_id")
+  startTime       DateTime     @map("start_time")
+  endTime         DateTime     @map("end_time")
+  duration        Int          // Duration in seconds
+  pauseDuration   Int          @default(0) @map("pause_duration")
+  focusQuality    FocusQuality @map("focus_quality")
+  tags            Json?
+  notes           String?      @db.Text
+  isCompleted     Boolean      @default(true) @map("is_completed")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  objective Objective? @relation(fields: [objectiveId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, startTime])
+  @@index([okrCategory])
+  @@index([objectiveId])
+  @@map("time_sessions")
+}
+
+// Category Mapping model for linking user categories to OKR areas
+model CategoryMapping {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id")
+  categoryName       String   @map("category_name")
+  okrCategory        String   @map("okr_category")
+  defaultObjectiveId String?  @map("default_objective_id")
+  hexColor           String   @default("#2C50CF") @map("hex_color")
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryName])
+  @@index([userId, isActive])
+  @@map("category_mappings")
+}
+
 // Enums
 enum PeriodType {
   QUARTERLY
@@ -158,4 +209,11 @@ enum UpdateType {
   MANUAL
   JOURNAL_SUGGESTED
   JOURNAL_AUTO
+}
+
+enum FocusQuality {
+  FULL_FOCUS
+  PARTIAL_FOCUS
+  INTERRUPTED
+  REST
 }
