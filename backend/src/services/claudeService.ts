@@ -220,6 +220,56 @@ Be warm, specific, and motivating.`;
 /**
  * Suggest key results for a given objective
  */
+/**
+ * Generate structured output from Claude AI based on a prompt
+ */
+export const generateStructuredOutput = async (
+  prompt: string,
+  schema: Record<string, string>
+): Promise<Record<string, any>> => {
+  if (!env.ANTHROPIC_API_KEY) {
+    throw new Error('AI service is not available. Please configure ANTHROPIC_API_KEY.');
+  }
+
+  const schemaDescription = Object.entries(schema)
+    .map(([key, type]) => `- ${key}: ${type}`)
+    .join('\n');
+
+  const fullPrompt = `${prompt}
+
+Output your response as a JSON object with these exact fields:
+${schemaDescription}
+
+Respond only with the JSON object, no other text.`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: fullPrompt,
+        },
+      ],
+    });
+
+    const responseText =
+      message.content[0].type === 'text' ? message.content[0].text : '';
+
+    // Extract JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+
+    throw new Error('Failed to extract JSON from AI response');
+  } catch (error) {
+    console.error('Error generating structured output:', error);
+    throw error;
+  }
+};
+
 export const suggestKeyResults = async (objectiveTitle: string): Promise<string[]> => {
   if (!env.ANTHROPIC_API_KEY) {
     return [];

@@ -15,6 +15,7 @@ import weeklyReportRoutes from './routes/weeklyReportRoutes';
 import pomodoroRoutes from './routes/pomodoroRoutes';
 import categoryMappingRoutes from './routes/categoryMappingRoutes';
 import timeAnalyticsRoutes from './routes/timeAnalyticsRoutes';
+import weeklyCheckinRoutes from './routes/weeklyCheckinRoutes';
 
 /**
  * Creates and configures the Express application
@@ -65,6 +66,7 @@ export const createApp = (): Application => {
   app.use('/api/time-sessions', pomodoroRoutes);
   app.use('/api/category-mappings', categoryMappingRoutes);
   app.use('/api/time-analytics', timeAnalyticsRoutes);
+  app.use('/api/weekly-checkin', weeklyCheckinRoutes);
 
   // 404 handler
   app.use(notFoundHandler);
