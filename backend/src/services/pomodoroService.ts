@@ -234,23 +234,31 @@ export const updateSession = async (
     }
   }
 
+  // Build update data object
+  const updateData: Prisma.TimeSessionUpdateInput = {};
+  if (input.title) updateData.title = input.title;
+  if (input.category !== undefined) updateData.category = input.category;
+  if (input.okrCategory !== undefined) updateData.okrCategory = input.okrCategory;
+  if (input.objectiveId !== undefined) {
+    updateData.objective = input.objectiveId
+      ? { connect: { id: input.objectiveId } }
+      : { disconnect: true };
+  }
+  if (input.endTime) updateData.endTime = input.endTime;
+  if (input.duration !== undefined) updateData.duration = input.duration;
+  if (input.pauseDuration !== undefined) updateData.pauseDuration = input.pauseDuration;
+  if (input.focusQuality) updateData.focusQuality = input.focusQuality;
+  if (input.tags !== undefined) {
+    updateData.tags = input.tags
+      ? (input.tags as Prisma.InputJsonValue)
+      : Prisma.JsonNull;
+  }
+  if (input.notes !== undefined) updateData.notes = input.notes;
+  if (input.isCompleted !== undefined) updateData.isCompleted = input.isCompleted;
+
   const session = await prisma.timeSession.update({
     where: { id: sessionId },
-    data: {
-      ...(input.title && { title: input.title }),
-      ...(input.category !== undefined && { category: input.category }),
-      ...(input.okrCategory !== undefined && { okrCategory: input.okrCategory }),
-      ...(input.objectiveId !== undefined && { objectiveId: input.objectiveId }),
-      ...(input.endTime && { endTime: input.endTime }),
-      ...(input.duration !== undefined && { duration: input.duration }),
-      ...(input.pauseDuration !== undefined && { pauseDuration: input.pauseDuration }),
-      ...(input.focusQuality && { focusQuality: input.focusQuality }),
-      ...(input.tags !== undefined && {
-        tags: input.tags ? (input.tags as Prisma.InputJsonValue) : null,
-      }),
-      ...(input.notes !== undefined && { notes: input.notes }),
-      ...(input.isCompleted !== undefined && { isCompleted: input.isCompleted }),
-    },
+    data: updateData,
     include: {
       objective: true,
     },

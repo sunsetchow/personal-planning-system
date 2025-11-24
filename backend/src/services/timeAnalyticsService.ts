@@ -1,6 +1,6 @@
 import prisma from '../config/database';
 import { FocusQuality } from '@prisma/client';
-import { startOfWeek, endOfWeek, startOfDay, endOfDay, format, eachDayOfInterval } from 'date-fns';
+import { startOfWeek, endOfWeek, format, eachDayOfInterval } from 'date-fns';
 
 /**
  * Time Analytics Service
