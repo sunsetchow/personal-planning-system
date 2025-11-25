@@ -4,6 +4,9 @@ import { ActivityCorrelator, CorrelatedActivity } from './activityCorrelator';
 import { OKRUpdateSuggester, OKRProgressUpdate } from './okrUpdateSuggester';
 import { getWeeklyTimeReport, WeeklyTimeReport } from '../timeAnalyticsService';
 import { WeeklyReportGenerator } from '../reports/weeklyReportGenerator';
+import { WeeklyJournalGenerator } from '../reports/weeklyJournalGenerator';
+import { NewsletterGenerator } from '../reports/newsletterGenerator';
+import { ReportStorage } from '../reports/reportStorage';
 
 /**
  * Weekly Check-in Orchestrator
@@ -32,6 +35,9 @@ export interface WeeklyCheckinResult {
   weekStart: string;
   weekEnd: string;
   markdownReport?: string;
+  weeklyJournal?: string;
+  newsletter?: string;
+  checkinId?: string;
 }
 
 export class WeeklyCheckinOrchestrator {
@@ -39,12 +45,18 @@ export class WeeklyCheckinOrchestrator {
   private activityCorrelator: ActivityCorrelator;
   private okrUpdateSuggester: OKRUpdateSuggester;
   private reportGenerator: WeeklyReportGenerator;
+  private journalGenerator: WeeklyJournalGenerator;
+  private newsletterGenerator: NewsletterGenerator;
+  private reportStorage: ReportStorage;
 
   constructor() {
     this.journalAnalyzer = new JournalAnalyzer();
     this.activityCorrelator = new ActivityCorrelator();
     this.okrUpdateSuggester = new OKRUpdateSuggester();
     this.reportGenerator = new WeeklyReportGenerator();
+    this.journalGenerator = new WeeklyJournalGenerator();
+    this.newsletterGenerator = new NewsletterGenerator();
+    this.reportStorage = new ReportStorage();
   }
 
   /**
@@ -94,8 +106,8 @@ export class WeeklyCheckinOrchestrator {
       okrProgress
     );
 
-    // Step 7: Generate Markdown report
-    console.log('📄 Step 7/7: Generating report...');
+    // Step 7: Generate all reports (Markdown, Journal, Newsletter)
+    console.log('📄 Step 7/10: Generating markdown report...');
     const result: WeeklyCheckinResult = {
       journalSummary,
       timeAnalysis,
@@ -108,11 +120,29 @@ export class WeeklyCheckinOrchestrator {
 
     const markdownReport = await this.reportGenerator.generate(result);
 
+    console.log('📖 Step 8/10: Generating weekly journal...');
+    const weeklyJournal = await this.journalGenerator.generate(result);
+
+    console.log('📰 Step 9/10: Generating newsletter...');
+    const newsletter = await this.newsletterGenerator.generate(result);
+
+    // Step 10: Save to database
+    console.log('💾 Step 10/10: Saving to database...');
+    const checkinId = await this.reportStorage.saveWeeklyCheckin(request.userId, {
+      ...result,
+      markdownReport,
+      weeklyJournal,
+      newsletter,
+    });
+
     console.log('✅ Weekly check-in completed!');
 
     return {
       ...result,
       markdownReport,
+      weeklyJournal,
+      newsletter,
+      checkinId,
     };
   }
 

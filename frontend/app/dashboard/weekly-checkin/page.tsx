@@ -122,6 +122,64 @@ export default function WeeklyCheckinPage() {
     }
   };
 
+  const downloadJournal = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/weekly-checkin/report/journal`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `weekly-journal-${new Date().toISOString().split('T')[0]}.md`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to download journal');
+      }
+    } catch (error) {
+      console.error('Failed to download journal:', error);
+      alert('Failed to download journal');
+    }
+  };
+
+  const downloadNewsletter = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/weekly-checkin/report/newsletter`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `weekly-newsletter-${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to download newsletter');
+      }
+    } catch (error) {
+      console.error('Failed to download newsletter:', error);
+      alert('Failed to download newsletter');
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -133,10 +191,20 @@ export default function WeeklyCheckinPage() {
         </div>
         <div className="flex gap-2">
           {checkinData && (
-            <Button onClick={downloadReport} variant="outline" size="lg">
-              <Download className="mr-2 h-5 w-5" />
-              Download Report
-            </Button>
+            <>
+              <Button onClick={downloadReport} variant="outline" size="lg">
+                <Download className="mr-2 h-5 w-5" />
+                Report
+              </Button>
+              <Button onClick={downloadJournal} variant="outline" size="lg">
+                <Download className="mr-2 h-5 w-5" />
+                Journal
+              </Button>
+              <Button onClick={downloadNewsletter} variant="outline" size="lg">
+                <Download className="mr-2 h-5 w-5" />
+                Newsletter
+              </Button>
+            </>
           )}
           <Button onClick={executeCheckin} disabled={loading} size="lg">
             {loading ? (

@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { WeeklyCheckinOrchestrator } from '../services/weeklyCheckin/checkinOrchestrator';
 import { OKRUpdateSuggester } from '../services/weeklyCheckin/okrUpdateSuggester';
+import { ReportStorage } from '../services/reports/reportStorage';
 
 /**
  * Weekly Check-in controller
@@ -11,6 +12,7 @@ import { OKRUpdateSuggester } from '../services/weeklyCheckin/okrUpdateSuggester
 
 const orchestrator = new WeeklyCheckinOrchestrator();
 const okrUpdateSuggester = new OKRUpdateSuggester();
+const reportStorage = new ReportStorage();
 
 /**
  * Execute weekly check-in
@@ -188,6 +190,203 @@ export const applyOKRUpdates = async (
     res.status(200).json({
       success: true,
       message: `${confirmed.length} OKR updates applied successfully`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Download weekly journal
+ * GET /api/weekly-checkin/report/journal
+ */
+export const downloadWeeklyJournal = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const { weekStart } = req.query;
+
+    // Default to current week if not specified
+    const startDate = weekStart
+      ? startOfWeek(new Date(weekStart as string), { weekStartsOn: 1 })
+      : startOfWeek(new Date(), { weekStartsOn: 1 });
+
+    const endDate = endOfWeek(startDate, { weekStartsOn: 1 });
+
+    // Execute check-in to get report
+    const result = await orchestrator.executeCheckin({
+      userId: req.user.userId,
+      weekStart: startDate,
+      weekEnd: endDate,
+    });
+
+    if (!result.weeklyJournal) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate journal',
+      });
+      return;
+    }
+
+    // Set headers for file download
+    const filename = `weekly-journal-${format(startDate, 'yyyy-MM-dd')}.md`;
+    res.setHeader('Content-Type', 'text/markdown');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(result.weeklyJournal);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Download newsletter
+ * GET /api/weekly-checkin/report/newsletter
+ */
+export const downloadNewsletter = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const { weekStart } = req.query;
+
+    // Default to current week if not specified
+    const startDate = weekStart
+      ? startOfWeek(new Date(weekStart as string), { weekStartsOn: 1 })
+      : startOfWeek(new Date(), { weekStartsOn: 1 });
+
+    const endDate = endOfWeek(startDate, { weekStartsOn: 1 });
+
+    // Execute check-in to get report
+    const result = await orchestrator.executeCheckin({
+      userId: req.user.userId,
+      weekStart: startDate,
+      weekEnd: endDate,
+    });
+
+    if (!result.newsletter) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate newsletter',
+      });
+      return;
+    }
+
+    // Set headers for file download
+    const filename = `weekly-newsletter-${format(startDate, 'yyyy-MM-dd')}.html`;
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(result.newsletter);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get weekly check-in history
+ * GET /api/weekly-checkin/history
+ */
+export const getCheckinHistory = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+
+    const history = await reportStorage.getCheckinHistory(req.user.userId, limit);
+
+    res.status(200).json({
+      success: true,
+      data: { history },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get weekly check-in by ID
+ * GET /api/weekly-checkin/:id
+ */
+export const getCheckinById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const checkinId = req.params.id;
+
+    const checkin = await reportStorage.getCheckinById(checkinId);
+
+    if (!checkin) {
+      res.status(404).json({
+        success: false,
+        message: 'Check-in not found',
+      });
+      return;
+    }
+
+    // Verify user owns this checkin
+    if (checkin.userId !== req.user.userId) {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { checkin },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get weekly check-in statistics
+ * GET /api/weekly-checkin/stats
+ */
+export const getCheckinStats = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const stats = await reportStorage.getCheckinStats(req.user.userId);
+
+    res.status(200).json({
+      success: true,
+      data: { stats },
     });
   } catch (error) {
     next(error);

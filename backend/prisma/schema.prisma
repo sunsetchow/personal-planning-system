@@ -27,6 +27,7 @@ model User {
   profile          UserProfile?
   timeSessions     TimeSession[]
   categoryMappings CategoryMapping[]
+  weeklyCheckins   WeeklyCheckin[]
 
   @@map("users")
 }
@@ -228,6 +229,29 @@ model AIInsight {
   @@index([userId, insightType])
   @@index([userId, lastJournalEntryDate])
   @@map("ai_insights")
+}
+
+// Weekly Check-in model for storing weekly reports and analyses
+model WeeklyCheckin {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  weekStart       DateTime @map("week_start") @db.Date
+  weekEnd         DateTime @map("week_end") @db.Date
+  weeklyReport    String   @map("weekly_report") @db.Text
+  weeklyJournal   String   @map("weekly_journal") @db.Text
+  newsletter      String   @db.Text
+  journalSummary  Json     @map("journal_summary")
+  timeAnalysis    Json     @map("time_analysis")
+  okrProgress     Json     @map("okr_progress")
+  aiInsights      Json     @map("ai_insights")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, weekEnd])
+  @@map("weekly_checkins")
 }
 
 // Enums
