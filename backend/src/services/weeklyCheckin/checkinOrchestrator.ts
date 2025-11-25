@@ -3,6 +3,7 @@ import { JournalAnalyzer, JournalSummary } from './journalAnalyzer';
 import { ActivityCorrelator, CorrelatedActivity } from './activityCorrelator';
 import { OKRUpdateSuggester, OKRProgressUpdate } from './okrUpdateSuggester';
 import { getWeeklyTimeReport, WeeklyTimeReport } from '../timeAnalyticsService';
+import { WeeklyReportGenerator } from '../reports/weeklyReportGenerator';
 
 /**
  * Weekly Check-in Orchestrator
@@ -30,17 +31,20 @@ export interface WeeklyCheckinResult {
   aiInsights: AIInsightReport;
   weekStart: string;
   weekEnd: string;
+  markdownReport?: string;
 }
 
 export class WeeklyCheckinOrchestrator {
   private journalAnalyzer: JournalAnalyzer;
   private activityCorrelator: ActivityCorrelator;
   private okrUpdateSuggester: OKRUpdateSuggester;
+  private reportGenerator: WeeklyReportGenerator;
 
   constructor() {
     this.journalAnalyzer = new JournalAnalyzer();
     this.activityCorrelator = new ActivityCorrelator();
     this.okrUpdateSuggester = new OKRUpdateSuggester();
+    this.reportGenerator = new WeeklyReportGenerator();
   }
 
   /**
@@ -83,16 +87,16 @@ export class WeeklyCheckinOrchestrator {
     );
 
     // Step 6: Generate AI insights
-    console.log('🤖 Step 6/6: Generating AI insights...');
+    console.log('🤖 Step 6/7: Generating AI insights...');
     const aiInsights = this.generateInsights(
       journalSummary,
       timeAnalysis,
       okrProgress
     );
 
-    console.log('✅ Weekly check-in completed!');
-
-    return {
+    // Step 7: Generate Markdown report
+    console.log('📄 Step 7/7: Generating report...');
+    const result: WeeklyCheckinResult = {
       journalSummary,
       timeAnalysis,
       okrProgress,
@@ -100,6 +104,15 @@ export class WeeklyCheckinOrchestrator {
       aiInsights,
       weekStart: request.weekStart.toISOString(),
       weekEnd: request.weekEnd.toISOString(),
+    };
+
+    const markdownReport = await this.reportGenerator.generate(result);
+
+    console.log('✅ Weekly check-in completed!');
+
+    return {
+      ...result,
+      markdownReport,
     };
   }
 

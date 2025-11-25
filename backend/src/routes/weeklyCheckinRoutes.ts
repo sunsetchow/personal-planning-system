@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   executeCheckin,
   getCheckinStatus,
+  downloadMarkdownReport,
   applyOKRUpdates,
 } from '../controllers/weeklyCheckinController';
 import { authenticate } from '../middleware/auth';
@@ -30,6 +31,14 @@ router.post('/', executeCheckin);
  * @query   weekStart (optional Date)
  */
 router.get('/status', getCheckinStatus);
+
+/**
+ * @route   GET /api/weekly-checkin/report/markdown
+ * @desc    Download weekly report as markdown file
+ * @access  Private
+ * @query   weekStart (optional Date)
+ */
+router.get('/report/markdown', downloadMarkdownReport);
 
 /**
  * @route   POST /api/weekly-checkin/apply-updates

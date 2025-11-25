@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Clock, TrendingUp, Target, Brain, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, TrendingUp, Target, Brain, AlertCircle, Download } from 'lucide-react';
 
 export default function WeeklyCheckinPage() {
   const [loading, setLoading] = useState(false);
@@ -93,6 +93,35 @@ export default function WeeklyCheckinPage() {
     return `${hours}h ${minutes}m`;
   };
 
+  const downloadReport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/weekly-checkin/report/markdown`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `weekly-report-${new Date().toISOString().split('T')[0]}.md`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to download report');
+      }
+    } catch (error) {
+      console.error('Failed to download report:', error);
+      alert('Failed to download report');
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -102,19 +131,27 @@ export default function WeeklyCheckinPage() {
             Analyze your week and get AI-powered insights
           </p>
         </div>
-        <Button onClick={executeCheckin} disabled={loading} size="lg">
-          {loading ? (
-            <>
-              <Clock className="mr-2 h-5 w-5 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <CheckCircle className="mr-2 h-5 w-5" />
-              Run Weekly Check-in
-            </>
+        <div className="flex gap-2">
+          {checkinData && (
+            <Button onClick={downloadReport} variant="outline" size="lg">
+              <Download className="mr-2 h-5 w-5" />
+              Download Report
+            </Button>
           )}
-        </Button>
+          <Button onClick={executeCheckin} disabled={loading} size="lg">
+            {loading ? (
+              <>
+                <Clock className="mr-2 h-5 w-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Run Weekly Check-in
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {!checkinData && !loading && (

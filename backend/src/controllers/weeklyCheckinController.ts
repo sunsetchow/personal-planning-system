@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { WeeklyCheckinOrchestrator } from '../services/weeklyCheckin/checkinOrchestrator';
 import { OKRUpdateSuggester } from '../services/weeklyCheckin/okrUpdateSuggester';
 
@@ -98,6 +98,55 @@ export const getCheckinStatus = async (
       success: true,
       data: { status },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Download weekly report as markdown
+ * GET /api/weekly-checkin/report/markdown
+ */
+export const downloadMarkdownReport = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const { weekStart } = req.query;
+
+    // Default to current week if not specified
+    const startDate = weekStart
+      ? startOfWeek(new Date(weekStart as string), { weekStartsOn: 1 })
+      : startOfWeek(new Date(), { weekStartsOn: 1 });
+
+    const endDate = endOfWeek(startDate, { weekStartsOn: 1 });
+
+    // Execute check-in to get report
+    const result = await orchestrator.executeCheckin({
+      userId: req.user.userId,
+      weekStart: startDate,
+      weekEnd: endDate,
+    });
+
+    if (!result.markdownReport) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate report',
+      });
+      return;
+    }
+
+    // Set headers for file download
+    const filename = `weekly-report-${format(startDate, 'yyyy-MM-dd')}.md`;
+    res.setHeader('Content-Type', 'text/markdown');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(result.markdownReport);
   } catch (error) {
     next(error);
   }
