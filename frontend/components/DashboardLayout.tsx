@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, Target, BookOpen, Menu, X, LogOut, FileText } from 'lucide-react';
+import { LayoutDashboard, Target, BookOpen, Menu, X, LogOut, FileText, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardLayoutProps {
@@ -19,6 +19,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/dashboard/okrs', icon: Target, label: 'My OKRs' },
     { path: '/dashboard/journal', icon: BookOpen, label: 'Journal' },
+    { path: '/dashboard/time-analytics', icon: Clock, label: 'Pomodoro Timer' },
     { path: '/dashboard/weekly-report', icon: FileText, label: 'Weekly Report' },
   ];
 
