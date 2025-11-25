@@ -2,10 +2,13 @@ import prisma from '../config/database';
 import { getUserEntries } from './journalEntryService';
 import { getUserObjectives } from './objectiveService';
 import { generateInsights } from './claudeService';
+import { getUserContext } from './userProfileService';
+import type { WeeklyTimeAnalysis } from './timeTrackingService';
+import { analyzeWeeklyTime, mapTimeToObjectives } from './timeTrackingService';
 
 /**
  * Weekly Report Service
- * Generates comprehensive weekly reports for users
+ * Generates comprehensive weekly reports for users with context-aware insights
  */
 
 export interface WeeklyReportData {
@@ -15,6 +18,7 @@ export interface WeeklyReportData {
     weekNumber: number;
     year: number;
   };
+  userContext?: string; // User profile context for personalized insights
   journalSummary: {
     totalEntries: number;
     averageMood: number;
@@ -38,10 +42,39 @@ export interface WeeklyReportData {
       title: string;
       progress: number;
       change: number;
+      timeInvested?: number; // Minutes spent on this objective
     }>;
   };
+  timeTracking?: {
+    totalMinutes: number;
+    totalSessions: number;
+    byCategory: Array<{
+      category: string;
+      totalMinutes: number;
+      sessionCount: number;
+      averageFocusQuality: number;
+    }>;
+    byFocusQuality: {
+      full: number;
+      partial: number;
+      interrupted: number;
+    };
+    topActivities: Array<{
+      title: string;
+      minutes: number;
+    }>;
+    dailyBreakdown: Array<{
+      date: string;
+      minutes: number;
+      sessions: number;
+    }>;
+    efficiencyInsights: {
+      focusScore: number; // 0-100, higher is better
+      productivityAlignment: string; // How well time aligns with progress
+    };
+  };
   achievements: Array<{
-    type: 'objective_completed' | 'key_result_completed' | 'journal_streak' | 'mood_improvement';
+    type: 'objective_completed' | 'key_result_completed' | 'journal_streak' | 'mood_improvement' | 'time_milestone';
     title: string;
     description: string;
     date: Date;
@@ -50,14 +83,26 @@ export interface WeeklyReportData {
     aiSummary: string;
     patterns: string[];
     recommendations: string[];
+    contextualInsights: string[]; // Based on user profile
   };
-  weekOverWeekComparison: {
+ weekOverWeekComparison: {
     entriesChange: number;
     moodChange: number;
     energyChange: number;
     progressChange: number;
+    timeChange?: number;
   };
 }
+
+type ObjectiveProgress = {
+  id: string;
+  title: string;
+  progress: number;
+  change: number;
+  timeInvested?: number;
+};
+
+type ObjectiveTimeMapping = Array<{ objectiveId: string; totalMinutes: number; sessionCount: number }>;
 
 /**
  * Get week number from date
@@ -154,11 +199,11 @@ export const generateWeeklyReport = async (
 
   // Journal Summary
   const moodScores = weekEntries
-    .filter((e) => e.moodScore !== null)
-    .map((e) => Number(e.moodScore));
+    .filter((e) => (e as any).moodScore !== null)
+    .map((e) => Number((e as any).moodScore));
   const energyScores = weekEntries
-    .filter((e) => e.energyScore !== null)
-    .map((e) => Number(e.energyScore));
+    .filter((e) => (e as any).energyScore !== null)
+    .map((e) => Number((e as any).energyScore));
 
   const averageMood = moodScores.length > 0
     ? moodScores.reduce((a, b) => a + b, 0) / moodScores.length
@@ -168,16 +213,16 @@ export const generateWeeklyReport = async (
     : 0;
 
   const prevAvgMood = prevWeekEntries
-    .filter((e) => e.moodScore !== null)
-    .reduce((sum, e) => sum + Number(e.moodScore || 0), 0) / prevWeekEntries.length || 0;
+    .filter((e) => (e as any).moodScore !== null)
+    .reduce((sum, e) => sum + Number((e as any).moodScore || 0), 0) / prevWeekEntries.length || 0;
   const prevAvgEnergy = prevWeekEntries
-    .filter((e) => e.energyScore !== null)
-    .reduce((sum, e) => sum + Number(e.energyScore || 0), 0) / prevWeekEntries.length || 0;
+    .filter((e) => (e as any).energyScore !== null)
+    .reduce((sum, e) => sum + Number((e as any).energyScore || 0), 0) / prevWeekEntries.length || 0;
 
   // Get highlights (entries with high mood or significant content)
   const highlights = weekEntries
-    .filter((e) => e.moodScore && Number(e.moodScore) >= 7)
-    .sort((a, b) => Number(b.moodScore || 0) - Number(a.moodScore || 0))
+    .filter((e) => (e as any).moodScore && Number((e as any).moodScore) >= 7)
+    .sort((a, b) => Number((b as any).moodScore || 0) - Number((a as any).moodScore || 0))
     .slice(0, 3)
     .map((e) => {
       // Extract first response or aiFeedback as content
@@ -190,7 +235,7 @@ export const generateWeeklyReport = async (
       return {
         date: e.entryDate,
         content: content.substring(0, 200),
-        moodScore: e.moodScore ? Number(e.moodScore) : undefined,
+        moodScore: (e as any).moodScore ? Number((e as any).moodScore) : undefined,
       };
     });
 
@@ -204,7 +249,7 @@ export const generateWeeklyReport = async (
   ).length;
 
   // Calculate progress for each objective
-  const objectiveProgress = allObjectives.map((obj) => {
+  const objectiveProgress: ObjectiveProgress[] = allObjectives.map((obj) => {
     const totalKRs = obj.keyResults.length;
     if (totalKRs === 0) return { ...obj, progress: 0, change: 0 };
 
@@ -221,13 +266,62 @@ export const generateWeeklyReport = async (
     };
   });
 
-  const topObjectives = objectiveProgress
+  const topObjectives: ObjectiveProgress[] = objectiveProgress
     .sort((a, b) => b.progress - a.progress)
     .slice(0, 5);
 
   const avgOKRProgress = objectiveProgress.length > 0
     ? objectiveProgress.reduce((sum, obj) => sum + obj.progress, 0) / objectiveProgress.length
     : 0;
+
+  // Get user context for personalized insights
+  let userContext: string | undefined;
+  try {
+    userContext = await getUserContext(userId);
+  } catch (error) {
+    console.error('Error fetching user context:', error);
+  }
+
+  // Analyze time tracking data
+  let timeAnalysis: WeeklyTimeAnalysis | undefined;
+  let timeToObjectiveMap: ObjectiveTimeMapping | undefined;
+  try {
+    timeAnalysis = await analyzeWeeklyTime(userId, weekStart, weekEnd);
+    timeToObjectiveMap = await mapTimeToObjectives(userId, weekStart, weekEnd);
+
+    // Enrich objectives with time data
+    topObjectives.forEach((obj) => {
+      const timeData = timeToObjectiveMap?.find((t) => t.objectiveId === obj.id);
+      if (timeData) {
+        obj.timeInvested = timeData.totalMinutes;
+      }
+    });
+  } catch (error) {
+    console.error('Error analyzing time tracking:', error);
+  }
+
+  // Calculate efficiency insights if time tracking available
+  let efficiencyInsights;
+  if (timeAnalysis && timeAnalysis.totalMinutes > 0) {
+    const fullFocusMinutes = timeAnalysis.byFocusQuality.full;
+    const totalMinutes = timeAnalysis.totalMinutes;
+    const focusScore = Math.round((fullFocusMinutes / totalMinutes) * 100);
+
+    // Calculate productivity alignment
+    let productivityAlignment = 'Good alignment';
+    if (timeAnalysis.totalMinutes > 1000 && avgOKRProgress < 30) {
+      productivityAlignment = 'High time investment but low progress - consider refocusing efforts';
+    } else if (timeAnalysis.totalMinutes < 300 && avgOKRProgress > 50) {
+      productivityAlignment = 'Excellent efficiency - high progress with focused time';
+    } else if (focusScore < 50) {
+      productivityAlignment = 'Consider reducing distractions to improve focus quality';
+    }
+
+    efficiencyInsights = {
+      focusScore,
+      productivityAlignment,
+    };
+  }
 
   // Achievements
   const achievements: WeeklyReportData['achievements'] = [];
@@ -261,6 +355,26 @@ export const generateWeeklyReport = async (
       type: 'mood_improvement',
       title: 'Mood on the Rise',
       description: 'Your mood improved throughout the week',
+      date: weekEnd,
+    });
+  }
+
+  // Check for time tracking milestones
+  if (timeAnalysis && timeAnalysis.totalMinutes >= 1200) {
+    // 20+ hours
+    achievements.push({
+      type: 'time_milestone',
+      title: 'Dedicated Week',
+      description: `You invested ${Math.round(timeAnalysis.totalMinutes / 60)} hours in focused work`,
+      date: weekEnd,
+    });
+  }
+
+  if (efficiencyInsights && efficiencyInsights.focusScore >= 80) {
+    achievements.push({
+      type: 'time_milestone',
+      title: 'High Focus Champion',
+      description: `Maintained ${efficiencyInsights.focusScore}% focus quality this week`,
       date: weekEnd,
     });
   }
@@ -304,8 +418,52 @@ export const generateWeeklyReport = async (
       if (averageMood < 5) {
         recommendations.push('Your mood is below average - consider taking breaks and self-care activities');
       }
+
+      // Add time tracking insights
+      if (timeAnalysis) {
+        if (timeAnalysis.totalMinutes > 0) {
+          patterns.push(`Invested ${Math.round(timeAnalysis.totalMinutes / 60)} hours in focused work`);
+        }
+
+        if (efficiencyInsights) {
+          if (efficiencyInsights.focusScore >= 70) {
+            patterns.push(`Strong focus quality at ${efficiencyInsights.focusScore}%`);
+          } else if (efficiencyInsights.focusScore < 50) {
+            recommendations.push('Work on improving focus quality - try Pomodoro technique or distraction-free environment');
+          }
+        }
+
+        // Category-specific recommendations
+        if (timeAnalysis.byCategory.length > 0) {
+          const topCategory = timeAnalysis.byCategory[0];
+          if (topCategory.totalMinutes > timeAnalysis.totalMinutes * 0.6) {
+            recommendations.push(`${Math.round((topCategory.totalMinutes / timeAnalysis.totalMinutes) * 100)}% of time on ${topCategory.category} - consider diversifying focus areas`);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error generating AI insights:', error);
+    }
+  }
+
+  // Add contextual insights based on user profile
+  const contextualInsights: string[] = [];
+  if (userContext) {
+    // Add insights based on user type/industry
+    if (userContext.includes('student')) {
+      if (weekEntries.length >= 5) {
+        contextualInsights.push('Consistent reflection habits are key to academic success');
+      }
+      if (avgOKRProgress > 60) {
+        contextualInsights.push('Strong academic progress - keep up the momentum');
+      }
+    } else if (userContext.includes('entrepreneur') || userContext.includes('professional')) {
+      if (timeAnalysis && timeAnalysis.totalMinutes > 2000) {
+        contextualInsights.push('High work volume this week - remember to balance with rest');
+      }
+      if (avgOKRProgress > 70) {
+        contextualInsights.push('Excellent business/career progress this week');
+      }
     }
   }
 
@@ -345,6 +503,7 @@ export const generateWeeklyReport = async (
       aiSummary,
       patterns,
       recommendations,
+      contextualInsights: userContext ? [userContext] : [],
     },
     weekOverWeekComparison,
   };

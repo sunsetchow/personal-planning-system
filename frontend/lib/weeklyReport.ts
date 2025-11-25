@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -72,7 +72,7 @@ export interface AvailableWeek {
  * @param weekOffset 0 = current week, -1 = last week, etc.
  */
 export const getWeeklyReport = async (weekOffset: number = 0): Promise<WeeklyReportData> => {
-  const response = await axios.get(`${API_URL}/api/reports/weekly`, {
+  const response = await axios.get(`${API_URL}/reports/weekly`, {
     params: { weekOffset },
     headers: getAuthHeaders(),
   });
@@ -83,7 +83,7 @@ export const getWeeklyReport = async (weekOffset: number = 0): Promise<WeeklyRep
  * Get available weeks for reports
  */
 export const getAvailableWeeks = async (): Promise<AvailableWeek[]> => {
-  const response = await axios.get(`${API_URL}/api/reports/available-weeks`, {
+  const response = await axios.get(`${API_URL}/reports/available-weeks`, {
     headers: getAuthHeaders(),
   });
   return response.data.data;

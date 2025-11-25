@@ -167,7 +167,7 @@ export const getWeeklyTimeReport = async (
   }>();
 
   const allDays = eachDayOfInterval({ start: startDate, end: endDate });
-  allDays.forEach(day => {
+  allDays.forEach((day: Date) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     dailyMap.set(dateKey, {
       duration: 0,
@@ -206,7 +206,7 @@ export const getWeeklyTimeReport = async (
   // Focus quality trend
   const focusQualityMap = new Map<string, Record<FocusQuality, number>>();
 
-  allDays.forEach(day => {
+  allDays.forEach((day: Date) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     focusQualityMap.set(dateKey, {
       FULL_FOCUS: 0,

@@ -1,12 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import {
-  analyzeJournalEntry,
-  suggestOKRUpdates,
-  generateInsights,
-  suggestKeyResults,
-} from '../services/claudeService';
-import { getUserEntries } from '../services/journalEntryService';
+import { analyzeJournalEntry, suggestOKRUpdates, suggestKeyResults } from '../services/claudeService';
+import { getDashboardInsights, forceRegenerateInsights } from '../services/aiInsightService';
 import { getUserObjectives } from '../services/objectiveService';
 import { ApiError } from '../middleware/errorHandler';
 
@@ -73,8 +68,11 @@ export const suggestUpdates = async (
 };
 
 /**
- * Generate AI insights based on journal entries and OKRs
+ * Generate AI insights based on journal entries and OKRs with caching
  * GET /api/ai/insights
+ * Query params:
+ *  - force: boolean - force regeneration even if cache exists
+ *  - format: 'simple' | 'structured' - return format (default: 'simple' for backward compatibility)
  */
 export const getInsights = async (
   req: AuthRequest,
@@ -83,16 +81,34 @@ export const getInsights = async (
 ): Promise<void> => {
   try {
     const userId = req.user!.userId;
+    const force = req.query.force === 'true';
+    const format = (req.query.format as string) || 'simple';
 
-    // Get user's data
-    const [journalEntries, objectives] = await Promise.all([
-      getUserEntries(userId),
-      getUserObjectives(userId),
-    ]);
+    let insights;
 
-    const insights = await generateInsights(journalEntries, objectives);
+    if (force) {
+      // Force regeneration
+      insights = await forceRegenerateInsights(userId);
+    } else {
+      // Use cache if available
+      insights = await getDashboardInsights(userId);
+    }
 
-    res.json({ insights });
+    // Return format based on request
+    if (format === 'structured') {
+      res.json({
+        id: insights.id,
+        summary: insights.summary,
+        patterns: insights.patterns,
+        recommendations: insights.recommendations,
+        metrics: insights.metrics,
+        generatedAt: insights.generatedAt,
+        isCached: insights.isCached,
+      });
+    } else {
+      // Simple format for backward compatibility
+      res.json({ insights: insights.summary });
+    }
   } catch (error) {
     next(error);
   }

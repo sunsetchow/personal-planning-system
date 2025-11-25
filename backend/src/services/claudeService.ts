@@ -12,8 +12,8 @@ const anthropic = new Anthropic({
   apiKey: env.ANTHROPIC_API_KEY || '',
 });
 
-// Use a current, supported Claude model
-const MODEL = 'claude-3-5-sonnet-20240620';
+// Use Claude Haiku 4.5 - fastest model for AI insights
+const MODEL = 'claude-haiku-4-5-20251001';
 
 interface KeyResultWithObjective {
   id: string;
@@ -30,6 +30,19 @@ interface OKRUpdateSuggestion {
   keyResultId: string;
   suggestedValue: number;
   reasoning: string;
+}
+
+interface StructuredInsights {
+  summary: string;
+  patterns: string[];
+  recommendations: string[];
+  metrics: {
+    totalEntries: number;
+    avgProgress: number;
+    activeGoals: number;
+    avgMood?: number;
+    avgEnergy?: number;
+  };
 }
 
 /**
@@ -164,19 +177,43 @@ Respond ONLY with valid JSON, no other text.`;
 };
 
 /**
- * Generate insights based on journal entries and OKR progress
+ * Generate structured insights based on journal entries and OKR progress
  */
-export const generateInsights = async (
+export const generateStructuredInsights = async (
   journalEntries: JournalEntry[],
   objectives: (Objective & { keyResults: any[] })[]
-): Promise<string> => {
+): Promise<StructuredInsights> => {
   if (!env.ANTHROPIC_API_KEY || journalEntries.length === 0) {
-    return "Add journal entries and OKRs to unlock AI insights.";
+    return {
+      summary: "Add journal entries and OKRs to unlock AI insights.",
+      patterns: [],
+      recommendations: ["Start journaling daily to track your progress"],
+      metrics: {
+        totalEntries: 0,
+        avgProgress: 0,
+        activeGoals: objectives.length,
+      },
+    };
   }
 
   try {
     // Get recent entries (last 7) - entries come in most-recent-first order
     const recentEntries = journalEntries.slice(0, 7);
+
+    // Calculate metrics
+    const moodScores = recentEntries
+      .filter((e: any) => e.moodScore !== null)
+      .map((e: any) => Number(e.moodScore));
+    const energyScores = recentEntries
+      .filter((e: any) => e.energyScore !== null)
+      .map((e: any) => Number(e.energyScore));
+
+    const avgMood = moodScores.length > 0
+      ? moodScores.reduce((a, b) => a + b, 0) / moodScores.length
+      : undefined;
+    const avgEnergy = energyScores.length > 0
+      ? energyScores.reduce((a, b) => a + b, 0) / energyScores.length
+      : undefined;
 
     // Calculate OKR progress
     const avgProgress =
@@ -189,32 +226,93 @@ export const generateInsights = async (
           }, 0) / objectives.length
         : 0;
 
+    const metrics = {
+      totalEntries: recentEntries.length,
+      avgProgress: Math.round(avgProgress),
+      activeGoals: objectives.length,
+      avgMood: avgMood ? Number(avgMood.toFixed(1)) : undefined,
+      avgEnergy: avgEnergy ? Number(avgEnergy.toFixed(1)) : undefined,
+    };
+
     const prompt = `You are an insightful AI coach analyzing someone's personal development journey.
 
 Recent Data:
-- Journal Entries: ${recentEntries.length} entries in the last week
-- Overall OKR Progress: ${avgProgress.toFixed(0)}%
-- Active Goals: ${objectives.length}
+- Journal Entries: ${metrics.totalEntries} entries in the last week
+- Overall OKR Progress: ${metrics.avgProgress}%
+- Active Goals: ${metrics.activeGoals}
+${metrics.avgMood ? `- Average Mood: ${metrics.avgMood}/10` : ''}
+${metrics.avgEnergy ? `- Average Energy: ${metrics.avgEnergy}/10` : ''}
 
-Provide a brief insight (2-3 sentences) that:
-1. Identifies a pattern or trend
-2. Offers encouraging perspective
-3. Suggests one actionable next step
+Provide structured insights in JSON format with:
+1. "summary": A warm, encouraging 2-3 sentence overview
+2. "patterns": Array of 2-3 observed patterns or trends
+3. "recommendations": Array of 2-3 specific, actionable next steps
 
-Be warm, specific, and motivating.`;
+Respond ONLY with valid JSON in this exact format:
+{
+  "summary": "...",
+  "patterns": ["...", "..."],
+  "recommendations": ["...", "..."]
+}`;
 
     const message = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 250,
+      max_tokens: 500,
       messages: [{ role: 'user', content: prompt }],
     });
 
     const textContent = message.content.find((block) => block.type === 'text');
-    return textContent?.type === 'text' ? textContent.text : 'Insights coming soon.';
+    if (!textContent || textContent.type !== 'text') {
+      return {
+        summary: 'Insights coming soon.',
+        patterns: [],
+        recommendations: [],
+        metrics,
+      };
+    }
+
+    // Parse JSON response
+    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return {
+        summary: textContent.text,
+        patterns: [],
+        recommendations: [],
+        metrics,
+      };
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      summary: parsed.summary || 'Keep up the great work!',
+      patterns: Array.isArray(parsed.patterns) ? parsed.patterns : [],
+      recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+      metrics,
+    };
   } catch (error: any) {
-    console.error('Claude API error in generateInsights:', error);
-    return 'Unable to generate insights at this time.';
+    console.error('Claude API error in generateStructuredInsights:', error);
+    return {
+      summary: 'Unable to generate insights at this time.',
+      patterns: [],
+      recommendations: [],
+      metrics: {
+        totalEntries: journalEntries.length,
+        avgProgress: 0,
+        activeGoals: objectives.length,
+      },
+    };
   }
+};
+
+/**
+ * Legacy function for backward compatibility - returns only summary text
+ */
+export const generateInsights = async (
+  journalEntries: JournalEntry[],
+  objectives: (Objective & { keyResults: any[] })[]
+): Promise<string> => {
+  const structured = await generateStructuredInsights(journalEntries, objectives);
+  return structured.summary;
 };
 
 /**

@@ -23,10 +23,33 @@ model User {
   objectives       Objective[]
   journalTemplates JournalTemplate[]
   journalEntries   JournalEntry[]
+  aiInsights       AIInsight[]
+  profile          UserProfile?
   timeSessions     TimeSession[]
   categoryMappings CategoryMapping[]
 
   @@map("users")
+}
+
+// User Profile model for context and personalization
+model UserProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique @map("user_id")
+  userType          String?  @map("user_type") // 'student', 'professional', 'entrepreneur', 'creator', etc.
+  industry          String?  // Tech, Finance, Healthcare, etc.
+  goals             Json?    // Array of primary goals
+  focusAreas        Json?    @map("focus_areas") // Array of focus areas (e.g., Career, Health, Learning)
+  workingHours      Json?    @map("working_hours") // Preferred working schedule
+  timezone          String?  @default("UTC")
+  customMetrics     Json?    @map("custom_metrics") // User-defined metrics to track
+  preferences       Json?    // UI preferences, notification settings, etc.
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
 }
 
 // Objective model for OKR tracking
@@ -183,6 +206,28 @@ model CategoryMapping {
   @@unique([userId, categoryName])
   @@index([userId, isActive])
   @@map("category_mappings")
+}
+
+// AI Insights Cache model for storing generated insights
+model AIInsight {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  insightType           String   @map("insight_type") // 'dashboard', 'weekly', 'monthly'
+  summary               String   @db.Text
+  patterns              Json?    // Array of pattern strings
+  recommendations       Json?    // Array of recommendation strings
+  metrics               Json?    // Key metrics used for generation
+  dataRange             Json     @map("data_range") // {startDate, endDate, entryCount, objectiveCount}
+  lastJournalEntryDate  DateTime? @map("last_journal_entry_date") @db.Date
+  generatedAt           DateTime @default(now()) @map("generated_at")
+  expiresAt             DateTime? @map("expires_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, insightType])
+  @@index([userId, lastJournalEntryDate])
+  @@map("ai_insights")
 }
 
 // Enums
