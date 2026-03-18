@@ -125,11 +125,11 @@ Journal Entry:
 
 Current OKRs:
 ${keyResultsWithObjectives
-  .map(
-    (kr) =>
-      `- ${kr.objectiveTitle} > ${kr.title}: ${kr.currentValue}/${kr.targetValue} ${kr.unit} (ID: ${kr.id})`
-  )
-  .join('\n')}
+        .map(
+          (kr) =>
+            `- ${kr.objectiveTitle} > ${kr.title}: ${kr.currentValue}/${kr.targetValue} ${kr.unit} (ID: ${kr.id})`
+        )
+        .join('\n')}
 
 If the journal mentions progress on any of these key results, respond with a JSON array of suggested updates.
 Each suggestion should have:
@@ -219,11 +219,11 @@ export const generateStructuredInsights = async (
     const avgProgress =
       objectives.length > 0
         ? objectives.reduce((sum, obj) => {
-            const total = obj.keyResults.reduce((acc, kr) => {
-              return acc + Math.min(100, (kr.currentValue / kr.targetValue) * 100);
-            }, 0);
-            return sum + (obj.keyResults.length > 0 ? total / obj.keyResults.length : 0);
-          }, 0) / objectives.length
+          const total = obj.keyResults.reduce((acc, kr) => {
+            return acc + Math.min(100, (kr.currentValue / kr.targetValue) * 100);
+          }, 0);
+          return sum + (obj.keyResults.length > 0 ? total / obj.keyResults.length : 0);
+        }, 0) / objectives.length
         : 0;
 
     const metrics = {
